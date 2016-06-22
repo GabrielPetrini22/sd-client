@@ -26,14 +26,17 @@ namespace client
         MemoryStream ms;
         TcpClient client;
         TcpClient client2 = new TcpClient();
+        TcpClient cliente3;
         NetworkStream ns;
         BinaryWriter br;
         //receber mensagem
         Socket skt;
         TcpListener t1;
         NetworkStream ns2;
+        NetworkStream ns3;
         Thread th;
         string cabecalho;
+        string resposta;
         void ReceivedText()//recebe a String da placa ou não reconhecida
         {
             try
@@ -47,22 +50,32 @@ namespace client
                 //Recebe o cabeçalho
                 cabecalho = Encoding.UTF8.GetString(buffer);
                 cabecalho = cabecalho.Substring(0, cabecalho.IndexOf("$"));
+                //MessageBox.Show(cabecalho);
+                
                 //Identifica a ação e verifica o que fazer
                 if (cabecalho.Substring(0, 1).Equals("4"))
                 {
+                    Console.WriteLine("Ação: 4-O servidor não reconheceu a placa!");
                     MessageBox.Show("Placa não reconhecida", "Erro", MessageBoxButtons.OK);
                 }
                 else if (cabecalho.Substring(0, 1).Equals("3"))
                 {
-                    if (MessageBox.Show("A placa reconhecida é: " + cabecalho.Substring(1, 8), "Confirmação", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    Console.WriteLine("Ação: 3-Placa reconhecida!");
+                    if (MessageBox.Show("A placa reconhecida é: " + cabecalho.Substring(1, cabecalho.Length -1), "Confirmação", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
-                        cabecalho = "21";
+                        resposta = "21";
                     }
                     else
                     {
-                        cabecalho = "20";
+                        resposta = "20";
                     }
+                    Console.WriteLine("Ação: 2-Cliente confirmou a placa ou não!");
                     //retorna o cabeçalho ao servidor
+                    byte[] buffer2 = Encoding.ASCII.GetBytes(resposta + "$");
+                    cliente3 = new TcpClient("172.16.102.113", 4350);
+                    ns3 = cliente3.GetStream();
+                    ns3.Write(buffer2, 0, buffer2.Length);
+                    ns3.Flush();
 
                 }
                 t1.Stop();
@@ -76,21 +89,7 @@ namespace client
             }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
-        //obtem endereço local
-        //string GetIpAdress()
-        //{
-        //    //IPHostEntry host;
-        //    string localip = "172.16.103.16";
-        //    //host = Dns.GetHostEntry(Dns.GetHostName());
-        //    //foreach (IPAddress ip in host.AddressList)
-        //    //{
-        //    //    if(ip.AddressFamily.ToString()== "InterNetwork")
-        //    //    {
-        //    //        localip = ip.ToString();
-        //    //    }
-        ////}
-        //    return localip;
-        //}
+
         private void button1_Click(object sender, EventArgs e)
         {
             openFileDialog1.ShowDialog();
@@ -103,6 +102,8 @@ namespace client
         {
             try
             {
+                //string resposta1;
+                Console.WriteLine("Ação: 1-Envia a imagem!");
                 ms = new MemoryStream();
                 pictureBox1.Image.Save(ms, pictureBox1.Image.RawFormat);
                 byte[] buffer = ms.GetBuffer();
@@ -115,7 +116,7 @@ namespace client
                 ns.Close();
                 client.Close();
             }
-            catch(Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
 
         private void Form1_Load(object sender, EventArgs e)
